@@ -1,1 +1,1 @@
-# serverless-test
+# serverless-framework
