@@ -9,6 +9,11 @@ provider:
         - Effect: Allow
           Action: 'dynamodb:*'
           Resource: arn:aws:dynamodb:us-east-1:946377148828:table/usersTable
+        - Effect: Allow
+          Action: 's3:*'
+          Resource: arn:aws:s3:::bucket-serverless-course-platzi-123456/*
+  environment:
+    BUCKET: bucket-serverless-course-platzi-123456
 
 plugins:
   - serverless-offline
@@ -73,7 +78,7 @@ functions:
               paths:
                 id: true
             schemas:
-              application/json: ${file(schemas/user-schema.json)}
+              application/json: ${file(schemas/user-schema.json)}  
   delete-users:
     handler: deleteUsers/handler.deleteUsers
     runtime: python3.8
@@ -88,6 +93,19 @@ functions:
             parameters:
               paths:
                 id: true
+  signedURL:
+    handler: signedurl/handler.signedS3URL
+    package:
+      patterns:
+        - "signedurl/handler.js"
+    events:
+      - http:
+          path: signedurl
+          method: GET
+          request:
+            parameters:
+              querystrings:
+                filename: true
 
 resources:
   Resources:
@@ -104,24 +122,27 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-    # S3Bucket:
-    #   Type: 'AWS::S3::Bucket'
-    #   Properties:
-    #     AccessControl: PublicRead
-    #     BucketName: bucket-serverless-course-123213
-    # SampleBucketPolicy:
-    #   Type: AWS::S3::BucketPolicy
-    #   Properties:
-    #     Bucket: !Ref S3Bucket
-    #     PolicyDocument:
-    #       Version: "2012-10-17"
-    #       Statement:
-    #         - Action:
-    #             - 's3:GetObject'
-    #           Effect: Allow
-    #           Resource: !Join
-    #             - ''
-    #             - - 'arn:aws:s3:::'
-    #               - !Ref S3Bucket
-    #               - /*
-    #           Principal: '*'
+    S3Bucket:
+      Type: 'AWS::S3::Bucket'
+      Properties:
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          #AccessControl: PublicRead
+        BucketName: bucket-serverless-course-platzi-123456
+    SampleBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref S3Bucket
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Action:
+                - 's3:GetObject'
+              Effect: Allow
+              Resource: !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref S3Bucket
+                  - /*
+              Principal: '*'           
